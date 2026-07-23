@@ -3,5 +3,5 @@ This is a simple open source WebView Style Player HUD script that displays basic
 Edit this however you'd like and feel free to take credit for your version of this script.
 
 WebView Player HUD V2 is another version of WebView Player HUD that I customized as an example to what it can be changed/modified into. It also has themes (Press T)
-<img width="776" height="732" alt="image" src="https://github.com/user-attachments/assets/3bc13626-3c0a-43e7-b1c1-a154b9929638" />
+
 
