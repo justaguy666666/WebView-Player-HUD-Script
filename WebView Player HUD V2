@@ -316,8 +316,11 @@ RunService.RenderStepped:Connect(function()
     InfoLabels[5].Text = "Health: " .. math.floor(Humanoid.Health) .. "/" .. Humanoid.MaxHealth
     InfoLabels[6].Text = string.format("Distance: %.1f m", Distance)
 
-    local screenPos, visible = Camera:WorldToViewportPoint(Root.Position)
-    if not visible then return end
+    local screenPos = Camera:WorldToViewportPoint(Root.Position)
+
+if screenPos.Z < 0 then
+    screenPos = Camera:WorldToViewportPoint(Root.Position + Camera.CFrame.LookVector * 2)
+end
 
     if not uiVisible then
         uiVisible = true
@@ -382,52 +385,64 @@ RunService.RenderStepped:Connect(function()
     }
 
     for i = 1, INFO_COUNT do
-        local box = InfoContainers[i]
-        local label = InfoLabels[i]
-        local curve = CurvedLines[i]
+    local box = InfoContainers[i]
+    local label = InfoLabels[i]
+    local curve = CurvedLines[i]
 
-        local offset = positions[i]
+    local offset = positions[i]
 
-        local hover = math.sin(tick() * 0.5 + i) * 6
-        local rot = math.sin(tick() * 0.7 + i) * 1.5
+    local hover = math.sin(tick() * 0.5 + i) * 6
+    local rot = math.sin(tick() * 0.7 + i) * 1.5
 
-        local x = screenPos.X + offset.X
-        local y = screenPos.Y + offset.Y + hover
+    local x = screenPos.X + offset.X
+    local y = screenPos.Y + offset.Y + hover
 
-        box.Position = UDim2.fromOffset(x, y)
-        box.Rotation = rot
+    box.Position = UDim2.fromOffset(x, y)
+    box.Rotation = rot
 
-        local startPos = Vector2.new(
-            box.AbsolutePosition.X + box.AbsoluteSize.X * 0.5,
-            box.AbsolutePosition.Y + box.AbsoluteSize.Y * 0.5
-        )
-        local endPos = Vector2.new(
-            Portrait.AbsolutePosition.X + Portrait.AbsoluteSize.X * 0.5,
-            Portrait.AbsolutePosition.Y + Portrait.AbsoluteSize.Y * 0.5
-        )
+    local startPos = Vector2.new(
+        box.AbsolutePosition.X + box.AbsoluteSize.X * 0.5,
+        box.AbsolutePosition.Y + box.AbsoluteSize.Y * 0.5
+    )
+    local endPos = Vector2.new(
+        Portrait.AbsolutePosition.X + Portrait.AbsoluteSize.X * 0.5,
+        Portrait.AbsolutePosition.Y + Portrait.AbsoluteSize.Y * 0.5
+    )
 
-        local midPos = (startPos + endPos) / 2 + Vector2.new(0, -40)
+    if (startPos - endPos).Magnitude < 2 then
+        local dir = Camera.CFrame.LookVector * 5
+        local adjusted = Camera:WorldToViewportPoint(Root.Position + dir)
+        endPos = Vector2.new(adjusted.X, adjusted.Y)
+    end
 
-        curve.Visible = true
-        curve:ClearAllChildren()
+    local midPos = (startPos + endPos) / 2 + Vector2.new(0, -40)
 
-        local col = (ActiveTheme.Mode == "Animated")
-            and ActiveTheme.Animation(tick())
-            or ActiveTheme.Line
+    curve.Visible = true
 
-        local function drawSegment(a, b)
+    if #curve:GetChildren() == 0 then
+        for _ = 1, 2 do
             local seg = Instance.new("Frame")
-            seg.BackgroundColor3 = col
             seg.BorderSizePixel = 0
-            seg.Size = UDim2.fromOffset((b - a).Magnitude, 2)
             seg.AnchorPoint = Vector2.new(0.5, 0.5)
-            seg.Position = UDim2.fromOffset((a.X + b.X) / 2, (a.Y + b.Y) / 2)
-            seg.Rotation = math.deg(math.atan2(b.Y - a.Y, b.X - a.X))
+            seg.Size = UDim2.fromOffset(0, 2)
             seg.BackgroundTransparency = 0.25
             seg.Parent = curve
         end
-
-        drawSegment(startPos, midPos)
-        drawSegment(midPos, endPos)
     end
+
+    local col = (ActiveTheme.Mode == "Animated")
+        and ActiveTheme.Animation(tick())
+        or ActiveTheme.Line
+
+    local segs = curve:GetChildren()
+    local function updateSegment(seg, a, b)
+        seg.BackgroundColor3 = col
+        seg.Size = UDim2.fromOffset((b - a).Magnitude, 2)
+        seg.Position = UDim2.fromOffset((a.X + b.X) / 2, (a.Y + b.Y) / 2)
+        seg.Rotation = math.deg(math.atan2(b.Y - a.Y, b.X - a.X))
+    end
+
+    updateSegment(segs[1], startPos, midPos)
+    updateSegment(segs[2], midPos, endPos)
+end
 end)
